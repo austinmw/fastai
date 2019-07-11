@@ -313,15 +313,17 @@ class MultiLabelFbeta(LearnerCallback):
     "Computes the fbeta score for multilabel classification"
     # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html
     _order = -20 
-    def __init__(self, learn, beta=2, eps=1e-15, thresh=0.3, sigmoid=True, average="micro"):
+    def __init__(self, learn, beta=2, eps=1e-15, thresh=0.3, sigmoid=True, average="micro", name_by_beta=False):
         super().__init__(learn)
-        self.eps, self.thresh, self.sigmoid, self.average, self.beta2 = \
-            eps, thresh, sigmoid, average, beta**2
+        self.eps, self.thresh, self.sigmoid, self.average, self.beta2, self.beta, self.name_by_beta = \
+            eps, thresh, sigmoid, average, beta**2, beta, name_by_beta
 
     def on_train_begin(self, **kwargs):
         self.c = self.learn.data.c
-        if self.average != "none": self.learn.recorder.add_metric_names([f'{self.average}_fbeta'])
-        else: self.learn.recorder.add_metric_names([f"fbeta_{c}" for c in self.learn.data.classes])
+        if self.average != "none" and self.name_by_beta: self.learn.recorder.add_metric_names([f'{self.average}_f_{self.beta}'])	
+        elif self.average != "none": self.learn.recorder.add_metric_names([f'{self.average}_fbeta'])
+        elif self.name_by_beta: self.learn.recorder.add_metric_names([f'f_{self.beta}_{c}' for c in self.learn.data.classes])
+        else: self.learn.recorder.add_metric_names([f'fbeta_{c}' for c in self.learn.data.classes])
 
     def on_epoch_begin(self, **kwargs):
         dvc = self.learn.data.device
